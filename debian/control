@@ -2,17 +2,13 @@ Source: fcitx-sunpinyin
 Section: utils
 Priority: optional
 Maintainer: IME Packaging Team <pkg-ime-devel@lists.alioth.debian.org>
-Uploaders: Aron Xu <happyaron.xu@gmail.com>
-DM-Upload-Allowed: yes
-Build-Depends: debhelper (>= 7.0.50~), cmake, intltool, pkg-config,
- fcitx (>= 1:4.0.1),
- libsqlite3-dev,
- libsunpinyin-dev (>=2.0.2),
- libx11-dev,
-Standards-Version: 3.9.1
+Uploaders: Aron Xu <aron@debian.org>
+Build-Depends: debhelper (>= 8), cmake, intltool, pkg-config,
+ fcitx-libs-dev, libsqlite3-dev, libsunpinyin-dev (>= 2.0.3-4), libx11-dev
+Standards-Version: 3.9.2
 Homepage: http://code.google.com/p/fcitx
-Vcs-Bzr: lp:~pkg-ime/ibus/debian-fcitx-sunpinyin
-Vcs-Browser: https://code.launchpad.net/~pkg-ime/ibus/debian-fcitx-sunpinyin
+Vcs-Git: git://git.debian.org/pkg-ime/fcitx-sunpinyin.git
+Vcs-Browser: http://git.debian.org/?p=pkg-ime/fcitx-sunpinyin.git
 
 Package: fcitx-sunpinyin
 Architecture: any

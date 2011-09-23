@@ -1,5 +1,5 @@
-Format-Specification: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=155
-Name: fcitx-sunpinyin
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: fcitx-sunpinyin
 Source: http://code.google.com/p/fcitx
 
 Copyright: 2010, CSSlayer <wengxt@gmail.com>

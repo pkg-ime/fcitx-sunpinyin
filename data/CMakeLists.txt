@@ -1,10 +1,9 @@
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/desc.po
-                   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/getdescpo ${CMAKE_CURRENT_SOURCE_DIR})
+fcitx_add_addon_conf_file(fcitx-sunpinyin.conf)
+fcitx_add_configdesc_file(fcitx-sunpinyin.desc)
 
-add_custom_target(desc ALL DEPENDS desc.po)
-
-install(FILES fcitx-sunpinyin.conf DESTINATION share/fcitx/data/addon)
-install(FILES fcitx-sunpinyin.desc DESTINATION share/fcitx/data/addon)
-install(FILES sunpinyin-logo.png DESTINATION share/fcitx/skin/dark RENAME fcitx-sunpinyin.png)
-install(FILES sunpinyin-logo-small.png DESTINATION share/fcitx/skin/default RENAME fcitx-sunpinyin.png)
-install(FILES sunpinyin-logo-small.png DESTINATION share/fcitx/skin/classic RENAME fcitx-sunpinyin.png)
+foreach(size 16 22 24 32 48 128)
+    install(FILES sunpinyin-logo-${size}.png RENAME fcitx-sunpinyin.png DESTINATION share/icons/hicolor/${size}x${size}/apps)
+endforeach(size 16 22 24 32 48 128)
+install(FILES sunpinyin-logo-22.png DESTINATION share/fcitx/skin/dark RENAME sunpinyin.png)
+install(FILES sunpinyin-logo-16.png DESTINATION share/fcitx/skin/default RENAME sunpinyin.png)
+install(FILES sunpinyin-logo-16.png DESTINATION share/fcitx/skin/classic RENAME sunpinyin.png)

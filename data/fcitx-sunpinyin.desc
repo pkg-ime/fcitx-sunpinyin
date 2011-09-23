@@ -3,7 +3,7 @@ Type=Boolean
 DefaultValue=False
 Description=Use Shuangpin Instead of Quanpin
 
-[Sunpinyin/ShuangpinSchema]
+[Sunpinyin/ShuangpinScheme]
 Type=Enum
 DefaultValue=MS2003
 EnumCount=7
@@ -25,6 +25,11 @@ Description=Fuzzy Segmentation
 Type=Boolean
 DefaultValue=False
 Description=Fuzzy Inner Segmentation
+
+[Sunpinyin/Priority]
+Type=Integer
+DefaultValue=1
+Description=Priority of Sunpinyin
 
 [QuanPin/FuzzyZhiZi]
 Type=Boolean
@@ -126,3 +131,5 @@ Type=Boolean
 DefaultValue=False
 Description=AutoCorrect Uei Ui
 
+[DescriptionFile]
+LocaleDomain=fcitx-sunpinyin
