@@ -1,0 +1,35 @@
+Index: fcitx-sunpinyin/CMakeLists.txt
+===================================================================
+--- fcitx-sunpinyin.orig/CMakeLists.txt	2011-10-08 21:54:27.560606414 +0800
++++ fcitx-sunpinyin/CMakeLists.txt	2011-10-08 21:55:19.464863785 +0800
+@@ -10,7 +10,7 @@
+ FIND_PACKAGE(Gettext REQUIRED)
+ FIND_PACKAGE(Fcitx  4.1.2 REQUIRED)
+ 
+-PKG_CHECK_MODULES(SUNPINYIN REQUIRED "sunpinyin-2.0 >= 2.0.4" )
++PKG_CHECK_MODULES(SUNPINYIN REQUIRED "sunpinyin-2.0 >= 2.0.3" )
+ 
+ # uninstall target
+ configure_file(
+Index: fcitx-sunpinyin/src/eim.cpp
+===================================================================
+--- fcitx-sunpinyin.orig/src/eim.cpp	2011-10-08 02:36:45.351165798 +0800
++++ fcitx-sunpinyin/src/eim.cpp	2011-10-08 21:57:18.361453363 +0800
+@@ -396,7 +396,8 @@
+ 
+ INPUT_RETURN_VALUE FcitxSunpinyinDeleteCandidate (FcitxSunpinyin* sunpinyin, CandidateWord* candWord)
+ {
+-    if (candWord->owner == sunpinyin)
++/*
++	if (candWord->owner == sunpinyin)
+     {
+         CCandidateList pcl;
+         sunpinyin->view->getCandidateList(pcl, 0, sunpinyin->candNum);
+@@ -406,6 +407,7 @@
+         classicView->deleteCandidate(*index, mask);
+         return IRV_DISPLAY_CANDWORDS;
+     }
++*/
+     return IRV_TO_PROCESS;
+ }
+ 

@@ -1,3 +1,9 @@
+fcitx-sunpinyin (0.3.2-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Aron Xu <aron@debian.org>  Mon, 03 Oct 2011 01:19:29 +0800
+
 fcitx-sunpinyin (0.3.1-1) unstable; urgency=low
 
   * New upstream release.
