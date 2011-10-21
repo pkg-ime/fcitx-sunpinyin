@@ -1,3 +1,10 @@
+fcitx-sunpinyin (0.3.2-2) unstable; urgency=low
+
+  * debian/patches/01-fix_shuangpin_fuzzy.patch:
+    [UPSTREAM] Fix a problem in the fuzzy functionality.
+
+ -- Aron Xu <aron@debian.org>  Fri, 21 Oct 2011 16:42:11 +0800
+
 fcitx-sunpinyin (0.3.2-1) unstable; urgency=low
 
   * New upstream release.
