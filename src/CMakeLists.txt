@@ -1,12 +1,14 @@
-include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
 
-PKG_CHECK_MODULES(SUNPINYIN REQUIRED "sunpinyin-2.0 >= 2.0" )
-PKG_CHECK_MODULES(FCITX_CONFIG REQUIRED "fcitx-config >= 1.0" )
-PKG_CHECK_MODULES(FCITX REQUIRED "fcitx" )
+include_directories (
+    ${SUNPINYIN_INCLUDE_DIRS}
+    ${FCITX4_FCITX_UTILS_INCLUDE_DIRS}
+    ${FCITX4_FCITX_CONFIG_INCLUDE_DIRS}
+    ${FCITX4_FCITX_INCLUDE_DIRS}
+    ${LIBINTL_INCLUDE_DIR}
+    )
 
-include_directories (${SUNPINYIN_INCLUDE_DIRS})
-include_directories (${FCITX_CONFIG_INCLUDE_DIRS})
-include_directories (${FCITX_INCLUDE_DIRS})
+link_directories (${SUNPINYIN_LIBRARY_DIRS})
 
 set( fcitx_sunpinyin_sources
     eim.cpp
@@ -16,11 +18,8 @@ set( fcitx_sunpinyin_sources
 
 add_definitions( -DLOCALEDIR=\"${CMAKE_INSTALL_PREFIX}/share/locale\" )
 
-add_library( fcitx-sunpinyin MODULE ${fcitx_sunpinyin_sources} )
-set_target_properties( fcitx-sunpinyin PROPERTIES PREFIX "")
-
-install(TARGETS fcitx-sunpinyin DESTINATION ${libdir}/fcitx/)
-
-target_link_libraries (fcitx-sunpinyin ${SUNPINYIN_LIBRARIES})
-target_link_libraries (fcitx-sunpinyin ${FCITX_CONFIG_LIBRARIES})
-target_link_libraries (fcitx-sunpinyin ${FCITX_LIBRARIES})
+fcitx_add_addon(fcitx-sunpinyin ${fcitx_sunpinyin_sources} )
+target_link_libraries (fcitx-sunpinyin
+                       ${SUNPINYIN_LIBRARIES}
+                       ${LIBINTL_LIBRARIES}
+                       )
