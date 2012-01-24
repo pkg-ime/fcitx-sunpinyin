@@ -40,6 +40,8 @@
 #include "handler.h"
 #include "eim.h"
 
+#define FCITX_SUNPINYIN_MAX(x, y) ((x) > (y)? (x) : (y))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,6 +50,9 @@ extern "C" {
         FcitxSunpinyinCreate,
         FcitxSunpinyinDestroy
     };
+
+    FCITX_EXPORT_API
+    int ABI_VERSION = FCITX_ABI_VERSION;
 #ifdef __cplusplus
 }
 #endif
@@ -58,6 +63,7 @@ boolean LoadSunpinyinConfig(FcitxSunpinyinConfig* fs);
 static void SaveSunpinyinConfig(FcitxSunpinyinConfig* fs);
 static void ConfigSunpinyin(FcitxSunpinyin* sunpinyin);
 static void* SunpinyinGetFullPinyin(void* arg, FcitxModuleFunctionArg args);
+static INPUT_RETURN_VALUE FcitxSunpinyinDeleteCandidate (FcitxSunpinyin* sunpinyin, CandidateWord* candWord);
 
 
 static const char* fuzzyPairs[][2] = {
@@ -113,11 +119,20 @@ __EXPORT_API
 INPUT_RETURN_VALUE FcitxSunpinyinDoInput(void* arg, FcitxKeySym sym, unsigned int state)
 {
     FcitxSunpinyin* sunpinyin = (FcitxSunpinyin*) arg;
-    FcitxInputState* input = &sunpinyin->owner->input;
+    FcitxInputState* input = FcitxInstanceGetInputState(sunpinyin->owner);
     CIMIView* view = sunpinyin->view;
     FcitxWindowHandler* windowHandler = sunpinyin->windowHandler;
     FcitxSunpinyinConfig* fs = &sunpinyin->fs;
-    CandidateWordSetChoose(input->candList, DIGIT_STR_CHOOSE);
+    FcitxConfig* config = FcitxInstanceGetConfig(sunpinyin->owner);
+    CandidateWordSetChoose(FcitxInputStateGetCandidateList(input), DIGIT_STR_CHOOSE);
+
+    int chooseKey = CheckChooseKey(sym, KEY_NONE, DIGIT_STR_CHOOSE);
+    if (state == KEY_CTRL_ALT_COMP && chooseKey >= 0)
+    {
+        CandidateWord* candidateWord = CandidateWordGetByIndex(FcitxInputStateGetCandidateList(input), chooseKey);
+        return FcitxSunpinyinDeleteCandidate(sunpinyin, candidateWord);
+    }
+
     if ( (!IsHotKeySimple(sym, state) || IsHotKey(sym, state, FCITX_SPACE)) && view->getIC()->isEmpty())
         return IRV_TO_PROCESS;
 
@@ -137,7 +152,7 @@ INPUT_RETURN_VALUE FcitxSunpinyinDoInput(void* arg, FcitxKeySym sym, unsigned in
         return IRV_TO_PROCESS;
 
     if (IsHotKey(sym, state, FCITX_SPACE))
-        return CandidateWordChooseByIndex(input->candList, 0);
+        return CandidateWordChooseByIndex(FcitxInputStateGetCandidateList(input), 0);
 
     if (!IsHotKeyUAZ(sym, state)
         && !IsHotKeyLAZ(sym, state)
@@ -153,7 +168,7 @@ INPUT_RETURN_VALUE FcitxSunpinyinDoInput(void* arg, FcitxKeySym sym, unsigned in
         )
         return IRV_TO_PROCESS;
 
-    if (IsHotKey(sym, state, sunpinyin->owner->config->hkPrevPage) || IsHotKey(sym, state, sunpinyin->owner->config->hkNextPage))
+    if (IsHotKey(sym, state, config->hkPrevPage) || IsHotKey(sym, state, config->hkNextPage))
         return IRV_TO_PROCESS;
 
     windowHandler->commit_flag = false;
@@ -193,27 +208,46 @@ INPUT_RETURN_VALUE FcitxSunpinyinGetCandWords(void* arg)
 {
     FcitxSunpinyin* sunpinyin = (FcitxSunpinyin* )arg;
     FcitxInstance* instance = sunpinyin->owner;
-    FcitxInputState* input = &sunpinyin->owner->input;
+    FcitxInputState* input = FcitxInstanceGetInputState(instance);
 
     CPreEditString ppd;
     sunpinyin->view->getPreeditString(ppd);
     TIConvSrcPtr src = (TIConvSrcPtr) (ppd.string());
+    
+    int hzlen = 0;    
+    while (hzlen < ppd.charTypeSize())
+    {
+        if (! (ppd.charTypeAt(hzlen) & IPreeditString::USER_CHOICE))
+            break;
+        hzlen ++ ;
+    }
+    
+    CleanInputWindowUp(instance);
 
     memcpy(sunpinyin->front_src, src, ppd.caret() * sizeof(TWCHAR));
     memcpy(sunpinyin->end_src, src + ppd.caret() * sizeof(TWCHAR),
            (ppd.size() - ppd.caret() + 1) * sizeof(TWCHAR));
+    memcpy(sunpinyin->input_src, src, hzlen * sizeof(TWCHAR));
+    
+    FcitxLog(INFO, "%d", ppd.candi_start());
 
     sunpinyin->front_src[ppd.caret()] = 0;
     sunpinyin->end_src[ppd.size() - ppd.caret() + 1] = 0;
+    sunpinyin->input_src[hzlen] = 0;
 
-    memset(sunpinyin->preedit, 0, MAX_USER_INPUT + 1);
+    memset(sunpinyin->clientpreedit, 0, FCITX_SUNPINYIN_MAX(hzlen * UTF8_MAX_LENGTH + 1, MAX_USER_INPUT + 1));
+    WCSTOMBS(sunpinyin->clientpreedit, sunpinyin->input_src, MAX_USER_INPUT);
+    AddMessageAtLast(FcitxInputStateGetClientPreedit(input), MSG_INPUT, "%s", sunpinyin->clientpreedit);
+    FcitxInputStateSetClientCursorPos(input, 0);
 
+    memset(sunpinyin->preedit, 0, FCITX_SUNPINYIN_MAX(ppd.size() * UTF8_MAX_LENGTH + 1, MAX_USER_INPUT + 1));
     WCSTOMBS(sunpinyin->preedit, sunpinyin->front_src, MAX_USER_INPUT);
-    input->iCursorPos = strlen(sunpinyin->preedit);
+    FcitxInputStateSetCursorPos(input, strlen(sunpinyin->preedit));
     WCSTOMBS(&sunpinyin->preedit[strlen(sunpinyin->preedit)], sunpinyin->end_src, MAX_USER_INPUT);
-
-    CleanInputWindowUp(instance);
-    AddMessageAtLast(input->msgPreedit, MSG_INPUT, sunpinyin->preedit);
+    
+    FcitxInputStateSetShowCursor(input, true);
+    
+    AddMessageAtLast(FcitxInputStateGetPreedit(input), MSG_INPUT, "%s", sunpinyin->preedit);
 
     CCandidateList pcl;
     sunpinyin->view->getCandidateList(pcl, 0, sunpinyin->candNum);
@@ -237,7 +271,13 @@ INPUT_RETURN_VALUE FcitxSunpinyinGetCandWords(void* arg)
 
         candWord.strWord = strdup(sunpinyin->ubuf);
 
-        CandidateWordAppend(sunpinyin->owner->input.candList, &candWord);
+        CandidateWordAppend(FcitxInputStateGetCandidateList(input), &candWord);
+
+        if (i == 0)
+        {
+            AddMessageAtLast(FcitxInputStateGetClientPreedit(input), MSG_INPUT, "%s", candWord.strWord);
+        }
+
     }
     return IRV_DISPLAY_CANDWORDS;
 }
@@ -276,7 +316,7 @@ __EXPORT_API
 void* FcitxSunpinyinCreate (FcitxInstance* instance)
 {
     FcitxSunpinyin* sunpinyin = (FcitxSunpinyin*) fcitx_malloc0(sizeof(FcitxSunpinyin));
-    FcitxAddon* addon = GetAddonByName(&instance->addons, "fcitx-sunpinyin");
+    FcitxAddon* addon = GetAddonByName(FcitxInstanceGetAddons(instance), "fcitx-sunpinyin");
     bindtextdomain("fcitx-sunpinyin", LOCALEDIR);
     sunpinyin->owner = instance;
     FcitxSunpinyinConfig* fs = &sunpinyin->fs;
@@ -292,6 +332,8 @@ void* FcitxSunpinyinCreate (FcitxInstance* instance)
         fac.setPinyinScheme(CSunpinyinSessionFactory::SHUANGPIN);
     else
         fac.setPinyinScheme(CSunpinyinSessionFactory::QUANPIN);
+
+    ConfigSunpinyin(sunpinyin);
     sunpinyin->bShuangpin = fs->bUseShuangpin;
 
     sunpinyin->view = fac.createSession();
@@ -308,11 +350,11 @@ void* FcitxSunpinyinCreate (FcitxInstance* instance)
 
     sunpinyin->view->attachWinHandler(windowHandler);
     sunpinyin->windowHandler->SetOwner(sunpinyin);
-
     ConfigSunpinyin(sunpinyin);
 
-    FcitxRegisterIM(instance,
+    FcitxRegisterIMv2(instance,
                     sunpinyin,
+                    "sunpinyin",
                     _("Sunpinyin"),
                     "sunpinyin",
                     FcitxSunpinyinInit,
@@ -323,7 +365,8 @@ void* FcitxSunpinyinCreate (FcitxInstance* instance)
                     NULL,
                     ReloadConfigFcitxSunpinyin,
                     NULL,
-                    fs->iSunpinyinPriority
+                    fs->iSunpinyinPriority,
+                    "zh_CN"
                    );
 
     AddFunction(addon, (void*) SunpinyinGetFullPinyin);
@@ -349,6 +392,21 @@ void FcitxSunpinyinDestroy (void* arg)
         delete sunpinyin->windowHandler;
 
     free(arg);
+}
+
+INPUT_RETURN_VALUE FcitxSunpinyinDeleteCandidate (FcitxSunpinyin* sunpinyin, CandidateWord* candWord)
+{
+    if (candWord->owner == sunpinyin)
+    {
+        CCandidateList pcl;
+        sunpinyin->view->getCandidateList(pcl, 0, sunpinyin->candNum);
+        int* index = (int*) candWord->priv;
+        CIMIClassicView* classicView = (CIMIClassicView*) sunpinyin->view;
+        unsigned int mask;
+        classicView->deleteCandidate(*index, mask);
+        return IRV_DISPLAY_CANDWORDS;
+    }
+    return IRV_TO_PROCESS;
 }
 
 /**
@@ -381,25 +439,26 @@ boolean LoadSunpinyinConfig(FcitxSunpinyinConfig* fs)
 
 void ConfigSunpinyin(FcitxSunpinyin* sunpinyin)
 {
-    ConfigValueType prevpage;
-    ConfigValueType nextpage;
     FcitxInstance* instance = sunpinyin->owner;
-    GenericConfig *fc = &instance->config->gconfig;
+    FcitxConfig* config = FcitxInstanceGetConfig(instance);
     FcitxSunpinyinConfig *fs = &sunpinyin->fs;
-    prevpage = ConfigGetBindValue(fc, "Hotkey", "PrevPageKey");
-    nextpage = ConfigGetBindValue(fc, "Hotkey", "NextPageKey");
-    sunpinyin->view->setCandiWindowSize(2048);
-    // page up/down key
-    CHotkeyProfile* prof = sunpinyin->view->getHotkeyProfile();
-    prof->clear();
-
     int i = 0;
-    for (i = 0 ; i < 2; i++)
+
+    if (sunpinyin->view)
     {
-        if (prevpage.hotkey[i].sym)
-            prof->addPageUpKey(CKeyEvent(prevpage.hotkey[i].sym, 0, prevpage.hotkey[i].state));
-        if (nextpage.hotkey[i].sym)
-            prof->addPageDownKey(CKeyEvent(nextpage.hotkey[i].sym, 0, nextpage.hotkey[i].state));
+        sunpinyin->view->setCandiWindowSize(2048);
+        // page up/down key
+        CHotkeyProfile* prof = sunpinyin->view->getHotkeyProfile();
+        prof->clear();
+
+        for (i = 0 ; i < 2; i++)
+        {
+            if (config->hkPrevPage[i].sym)
+                prof->addPageUpKey(CKeyEvent(config->hkPrevPage[i].sym, 0, config->hkPrevPage[i].state));
+            if (config->hkNextPage[i].sym)
+                prof->addPageDownKey(CKeyEvent(config->hkNextPage[i].sym, 0, config->hkNextPage[i].state));
+        }
+        sunpinyin->view->setCancelOnBackspace(1);
     }
 
     string_pairs fuzzy, correction;
@@ -430,10 +489,8 @@ void ConfigSunpinyin(FcitxSunpinyin* sunpinyin)
     else
         AQuanpinSchemePolicy::instance().setAutoCorrecting(false);
 
-    sunpinyin->view->setCancelOnBackspace(1);
-    if (sunpinyin->shuangpin_data)
-        delete sunpinyin->shuangpin_data;
-    sunpinyin->shuangpin_data = new CShuangpinData(fs->SPScheme);
+    if (sunpinyin->shuangpin_data == NULL)
+        sunpinyin->shuangpin_data = new CShuangpinData(fs->SPScheme);
     AShuangpinSchemePolicy::instance().setShuangpinType(fs->SPScheme);
     AQuanpinSchemePolicy::instance().setFuzzySegmentation(fs->bFuzzySegmentation);
     AQuanpinSchemePolicy::instance().setInnerFuzzySegmentation(fs->bFuzzyInnerSegmentation);
