@@ -1,8 +1,18 @@
-Index: fcitx-sunpinyin/CMakeLists.txt
+From: IME Packaging Team <pkg-ime-devel@lists.alioth.debian.org>
+Date: Sun, 5 Feb 2012 21:12:25 +0800
+Subject: 01-lower_sunpinyin_version.patch
+
 ===================================================================
---- fcitx-sunpinyin.orig/CMakeLists.txt	2012-02-05 21:09:54.293720968 +0800
-+++ fcitx-sunpinyin/CMakeLists.txt	2012-02-05 21:09:58.501741835 +0800
-@@ -10,7 +10,7 @@
+---
+ CMakeLists.txt |    2 +-
+ src/eim.cpp    |    4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5ab4779..68f3a44 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -10,7 +10,7 @@ FIND_PACKAGE(Libintl REQUIRED)
  FIND_PACKAGE(Gettext REQUIRED)
  FIND_PACKAGE(Fcitx 4.2.0 REQUIRED)
  
@@ -11,11 +21,11 @@ Index: fcitx-sunpinyin/CMakeLists.txt
  
  # uninstall target
  configure_file(
-Index: fcitx-sunpinyin/src/eim.cpp
-===================================================================
---- fcitx-sunpinyin.orig/src/eim.cpp	2012-02-05 21:09:54.309721039 +0800
-+++ fcitx-sunpinyin/src/eim.cpp	2012-02-05 21:09:58.501741835 +0800
-@@ -400,7 +400,8 @@
+diff --git a/src/eim.cpp b/src/eim.cpp
+index d5790f9..605fc32 100644
+--- a/src/eim.cpp
++++ b/src/eim.cpp
+@@ -400,7 +400,8 @@ void FcitxSunpinyinDestroy (void* arg)
  
  INPUT_RETURN_VALUE FcitxSunpinyinDeleteCandidate (FcitxSunpinyin* sunpinyin, FcitxCandidateWord* candWord)
  {
@@ -25,7 +35,7 @@ Index: fcitx-sunpinyin/src/eim.cpp
      {
          CCandidateList pcl;
          sunpinyin->view->getCandidateList(pcl, 0, sunpinyin->candNum);
-@@ -410,6 +411,7 @@
+@@ -410,6 +411,7 @@ INPUT_RETURN_VALUE FcitxSunpinyinDeleteCandidate (FcitxSunpinyin* sunpinyin, Fci
          classicView->deleteCandidate(*index, mask);
          return IRV_DISPLAY_CANDWORDS;
      }
@@ -33,3 +43,4 @@ Index: fcitx-sunpinyin/src/eim.cpp
      return IRV_TO_PROCESS;
  }
  
+-- 
