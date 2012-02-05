@@ -1,3 +1,9 @@
+fcitx-sunpinyin (0.3.3-1) unstable; urgency=low
+
+  * New upstream release: fcitx 4.2.0. 
+
+ -- YunQiang Su <wzssyqa@gmail.com>  Sun, 05 Feb 2012 21:23:55 +0800
+
 fcitx-sunpinyin (0.3.2-2) unstable; urgency=low
 
   * debian/patches/01-fix_shuangpin_fuzzy.patch:
