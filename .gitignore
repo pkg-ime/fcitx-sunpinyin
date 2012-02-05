@@ -12,3 +12,4 @@ data/desc.po
 .kdev4
 .directory
 *.kate-swp
+.pc/
