@@ -15,7 +15,7 @@
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program; if not, write to the                         *
  *   Free Software Foundation, Inc.,                                       *
- *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.              *
  ***************************************************************************/
 
 #include <sunpinyin.h>
@@ -65,7 +65,7 @@ void FcitxWindowHandler::commit(const TWCHAR* str)
 {
     FcitxInstance* instance = owner->owner;
     FcitxInputState* input = FcitxInstanceGetInputState(instance);
-    char *buf_ = GetOutputString(input);
+    char *buf_ = FcitxInputStateGetOutputString(input);
     memset(buf_, 0, MAX_USER_INPUT);
     WCSTOMBS(buf_, str, MAX_USER_INPUT);
     commit_flag = true;
